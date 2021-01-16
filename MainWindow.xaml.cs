@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,12 +24,13 @@ namespace MatchGame
     {
         DispatcherTimer timer = new DispatcherTimer();
         int tenthsOfSecondsElapsed;
+        int? bestTime = null;
         int matchesFound;
         TextBlock lastTextBlockClicked;
         bool findingMatch = false;
 
         private List<List<string>> _gameList;
-
+        private List<string> _gameUiNames;
         private List<List<string>> emojiList
        {
             get 
@@ -43,11 +45,14 @@ namespace MatchGame
                 return _gameList;
             }
        }
-
         
         public MainWindow()
         {
             _gameList = new List<List<string>>();
+            _gameUiNames = new List<string>() {
+                    "bestTimeBlock",
+                    "timeTextBlock"
+                };
             InitializeComponent();
             timer.Interval = TimeSpan.FromSeconds(.1);
             timer.Tick += Timer_Tick;
@@ -57,12 +62,21 @@ namespace MatchGame
         private void Timer_Tick(object sender, EventArgs e)
         {
             tenthsOfSecondsElapsed++;
-            timeTextBlock.Text = (tenthsOfSecondsElapsed / 10f).ToString("0.0s");
+            string timeElapsed = (tenthsOfSecondsElapsed / 10f).ToString("0.0s");
+            timeTextBlock.Text = timeElapsed;
             if (matchesFound == 8)
             {
                 timer.Stop();
-                timeTextBlock.Text = timeTextBlock.Text + " - Play again?";
+                timeTextBlock.Text = timeElapsed + "- Play Again?";
+                if (bestTime is null || tenthsOfSecondsElapsed < bestTime)
+                {
+                     bestTime = tenthsOfSecondsElapsed; 
+                }
+                bestTimeBlock.Text = $"Best Time: {timeElapsed}";
             }
+
+
+                
         }
 
         private List<string> getRandomList()
@@ -82,11 +96,11 @@ namespace MatchGame
 
             foreach (TextBlock textBlock in mainGrid.Children.OfType<TextBlock>())
             {
-                if (textBlock.Name != "timeTextBlock")
+                if (!_gameUiNames.Contains(textBlock.Name)) 
                 {
                     textBlock.Visibility = Visibility.Visible;
                     //Get a random index
-                    int index = random.Next(gameList.Count);
+                    int index = random.Next(gameList.Count - 1);
                     string nextEmoji = gameList[index];
                     textBlock.Text = nextEmoji;
                     gameList.RemoveAt(index);
